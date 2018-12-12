@@ -8,12 +8,10 @@ from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
 from scipy import linalg
 
-def F( x, a=20, b=0.2, c=2*sc.pi ):
-    x = np.asarray_chkfinite(x)  # ValueError if any NaN or Inf
-    n = len(x)
-    s1 = sum( x**2 )
-    s2 = sum( sc.cos( c * x ))
-    return -a*sc.exp( -b*sc.sqrt( s1 / n )) - sc.exp( s2 / n ) + a + sc.exp(1)
+from tests import ackley, ackleybounds
+
+def F( x ):
+    return ackley(x)
 
 def returnE(object):
     return object.E
@@ -79,7 +77,7 @@ print("Std = " +str(std))
 print("Max Value = " + str(maxx))
 print("Min Value = "+ str(minn))
 
-Bounds = [-50,50]
+Bounds = ackleybounds
 x1 = np.linspace(Bounds[0], Bounds[1])
 x2 = np.linspace(Bounds[0], Bounds[1])
 X1, X2 = np.meshgrid(x1,x2)

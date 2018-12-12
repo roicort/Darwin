@@ -40,19 +40,17 @@ MaxGen=500
 sigma=3.0
 
 stats=[]
-me=[]
+m=[]
 
 for i in range(30):
     v=ee(n,k,c,MaxGen,sigma)
-    me.append(v)
-    res=(v,F(v))
-    stats.append(res)
+    m.append(F(v))
 
-m=sorted(stats, key=lambda tup: tup[1])
+m.sort()
 m.reverse()
 
-median =sc.mean(res)
-std = sc.std(res)
+median =sc.mean(m)
+std = sc.std(m)
 maxx=m[0]
 minn=m[-1]
 
