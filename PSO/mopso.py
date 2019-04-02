@@ -6,12 +6,19 @@ from scipy import linalg
 import matplotlib.pyplot as plt
 from tqdm import trange, tqdm
 
+import pygmo as pg
+
+def calchv(points):
+    hv = hypervolume(points)
+    ref_point = [2,2]
+    return hv.compute(ref_point) , hv.contributions(ref_point) 
+
 class particle:
     def __init__(self,points,ncentroids):
         self.pos = rand.sample(points,ncentroids) # position of all centroids
         self.times = [0 for i in range(ncentroids)]
         self.areas = [0 for i in range(ncentroids)]
-        self.fitness = 0
+        self.fitness = [0,0]
         self.bestfitness = float("inf")
         self.bestpos = self.pos #best pos of centroids
         self.vel = [np.array([0,0]) for i in range(ncentroids)]
@@ -80,29 +87,32 @@ def PSO(Points,Swarm,MaxIters,w,c1,c2,ncentroids):
     Bounds = [xmin,xmax,ymin,ymax]
 
     print(Bounds)
-
-    input()
     
     print("\n\n\n\n\n\n")
 
-    for _ in trange(MaxIters):  
+    A = [[] for _ in range(MaxIters)]
+
+    for t in trange(MaxIters): 
 
         for particle in Swarm:
+
             particle.clusters = calcclusters(particle.pos,Points)
             particle.areas, particle.radius = calcareas(particle.pos,particle.clusters,Points)
             particle.times = calctimes(particle.clusters,Points) 
-            #particle.fitness = Fitness(particle.times)
-            particle.fitness = Fitness(particle.areas) 
+
+            particle.fitness[0] = Fitness(particle.times)
+            particle.fitness[1] = Fitness(particle.areas) 
+
             if particle.fitness < particle.bestfitness:
                 particle.bestfitness = particle.fitness
                 particle.bestpos = particle.pos[:]
 
-        globalbest=min(Swarm, key=lambda objectt: objectt.bestfitness)
-        #plt.scatter([c[0] for c in globalbest.pos],[c[1] for c in globalbest.pos],s=5,c='red')
-        #plt.show()
-        tqdm.write("Fitness = %f" % globalbest.bestfitness)
+        HVC = HvContribution(At)
+        At.order(decresaing)
 
         for particle in Swarm:
+            globalbest = RandomSelect(At,TOP)
+            pBest = RandomSelect(At,BOT)
             for i in range(ncentroids):
 
                 r1 = np.random.uniform(0.0000001,1)
@@ -115,6 +125,18 @@ def PSO(Points,Swarm,MaxIters,w,c1,c2,ncentroids):
                     particle.pos[i][0] = np.random.uniform(Bounds[0],Bounds[1])
                 if particle.pos[i][1] < Bounds[2] or particle.pos[i][1] > Bounds[3]:
                     particle.pos[i][1] = np.random.uniform(Bounds[2],Bounds[3])
+                    
+            particle.bound()
+            particle.clusters = calcclusters(particle.pos,Points)
+            particle.areas, particle.radius = calcareas(particle.pos,particle.clusters,Points)
+            particle.times = calctimes(particle.clusters,Points) 
+
+            particle.fitness[0] = Fitness(particle.times)
+            particle.fitness[1] = Fitness(particle.areas) 
+
+        for particle in Swarm:
+            A[t+1] = UpdateExternalArchiveHv(At, xt+1)
+
 
                 
     bestsolever = min(Swarm, key=lambda objectt: objectt.bestfitness)
@@ -126,7 +148,7 @@ def PSOClustering(Points, ncentroids = 13, nparticles = 25, niterations = 50):
     w  = 0.5
     c1 = 1
     c2 = 1
-    
+
     centroids = []
     for p in range(len(Points)):
         centroids.append( np.array(Points[p][1:2][0]) ) 

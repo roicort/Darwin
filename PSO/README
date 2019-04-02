@@ -1,0 +1,36 @@
+pdv, es una abreviacion de punto de venta
+sprint7ToroideMixto.csv
+      pdv_code    : es un identificador para el punto de venta.
+      lat         : es el valor de latitud para el punto de venta.
+      lon         : es el valor de longitud para el punto de venta.
+      demanda     : es el tiempo en segundos que se debe permanecer en el punto de venta.
+      frecuencia  : es la cantidad de veces que se debe visitar al punto de venta por semana.
+      sector      : es solo una etiqueta para nombrar a cada cluster.
+      visitas     : pueden existir 2 valores:
+                    1. Una cadena de longitud 6 compuesta de 0's (ese dia no se visita) y
+                       1's (se visita), la cual especifica que dias se visitara el punto de venta,
+                       esto es especificado.
+                       Ejemplo: la cadena 100100, significa que se visitara lunes y jueves.
+                    2. Cuando el valor es "x" quiere decir que se debe crear una cadena como en el
+                       ejemplo anterior el cual debe ajustarse a la frecuencia.
+      hora_inicio : es la hora de inicio en la que se puede visitar un pdv. Si no hay un valor,
+                    significa que puede ser visitado en cualquier horario de la jornada laboral
+                    (8 horas como minimo, esto tambien puede ser especificado).
+      hora_fin    : es la hora de termino en la que se puede visitar un pdv. Tiene las mismas reglas
+                    que hora_inicio.
+      cluster     : es el grupo al que pertenece a cada sector, este valor es generado por el algoritmo
+                    de agrupamiento o clusterizacion, para este ejericio se tienen que generar 13 grupos.
+
+Notas adicionales
+      1. Para la cadena de visitas solo se toma en cuenta de lunes a sabado para
+         poder visitar el pdv.
+
+
+
+Matriz de costos de sector M87
+
+matrices.json:
+      matrizDistancia : es una matriz entre cada pdv, los valores estan en metros, que representan
+                        la distancia de un punto a otro.
+      matrizTiempo    : es una matriz entre cada pdv, los valores estan en segundos, que representan
+                        el tiempo de ir de un punto a otro.
