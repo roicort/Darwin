@@ -6,6 +6,9 @@ from scipy import linalg
 import matplotlib.pyplot as plt
 from tqdm import trange, tqdm
 
+rand.seed(1)
+np.random.seed(1)
+
 class particle:
     def __init__(self,points,ncentroids):
         self.pos = rand.sample(points,ncentroids) # position of all centroids
@@ -81,8 +84,6 @@ def PSO(Points,Swarm,MaxIters,w,c1,c2,ncentroids):
 
     print(Bounds)
 
-    input()
-    
     print("\n\n\n\n\n\n")
 
     for _ in trange(MaxIters):  
@@ -140,7 +141,7 @@ def PSOClustering(Points, ncentroids = 13, nparticles = 25, niterations = 50):
 #Main
 
 data = loaddata(plot=True)
-centroids, fitness, radius = PSOClustering(data,niterations = 1)
+centroids, fitness, radius = PSOClustering(data,niterations = 50)
 #np.save(str(fitness),centroids)
 plt.scatter([c[0] for c in centroids],[c[1] for c in centroids],s=5,c='red')
 for i in range(len(centroids)):

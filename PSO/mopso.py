@@ -24,6 +24,7 @@ class particle:
         self.vel = [np.array([0,0]) for i in range(ncentroids)]
         self.clusters = None
         self.radius = [0 for i in range(ncentroids)]
+        self.contribution = 0
 
 def loaddata(datapath="data.csv",plot=False):
     data = pd.read_csv(datapath) 
@@ -90,29 +91,23 @@ def PSO(Points,Swarm,MaxIters,w,c1,c2,ncentroids):
     
     print("\n\n\n\n\n\n")
 
-    A = [[] for _ in range(MaxIters)]
-
     for t in trange(MaxIters): 
 
         for particle in Swarm:
-
             particle.clusters = calcclusters(particle.pos,Points)
             particle.areas, particle.radius = calcareas(particle.pos,particle.clusters,Points)
             particle.times = calctimes(particle.clusters,Points) 
 
             particle.fitness[0] = Fitness(particle.times)
             particle.fitness[1] = Fitness(particle.areas) 
-
-            if particle.fitness < particle.bestfitness:
-                particle.bestfitness = particle.fitness
-                particle.bestpos = particle.pos[:]
-
-        HVC = HvContribution(At)
-        At.order(decresaing)
+        
+        A = nondominated(Swarm)
+        hvc, contributions = HvContribution(nondominatedparticles)
+        A.order(decresaing)
 
         for particle in Swarm:
-            globalbest = RandomSelect(At,TOP)
-            pBest = RandomSelect(At,BOT)
+            globalbest = RandomSelect(A,TOP)
+            pBest = RandomSelect(A,BOT)
             for i in range(ncentroids):
 
                 r1 = np.random.uniform(0.0000001,1)
@@ -126,7 +121,6 @@ def PSO(Points,Swarm,MaxIters,w,c1,c2,ncentroids):
                 if particle.pos[i][1] < Bounds[2] or particle.pos[i][1] > Bounds[3]:
                     particle.pos[i][1] = np.random.uniform(Bounds[2],Bounds[3])
                     
-            particle.bound()
             particle.clusters = calcclusters(particle.pos,Points)
             particle.areas, particle.radius = calcareas(particle.pos,particle.clusters,Points)
             particle.times = calctimes(particle.clusters,Points) 
