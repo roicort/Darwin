@@ -22,18 +22,6 @@ def dominance(A,B):
         return 2
     return 0
 
-def nondomiatedsorting(population):
-    nondominated = []
-    for A in population:
-        for B in population:
-            d = dominance(A,B)
-            if d == -1:
-                break
-        if d == 1:
-            nondominated.append(A)
-        d = 0
-    return nondominated
-
 def bentleynondomiatedsorting(population):
     nondominated = [population[0]]
     for p in range(len(population)):
