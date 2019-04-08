@@ -5,6 +5,7 @@ import pandas as pd
 from scipy import linalg
 import matplotlib.pyplot as plt
 from tqdm import trange, tqdm
+from copy import deepcopy
 
 import pygmo as pg
 from pygmo import hypervolume
@@ -102,7 +103,7 @@ def bentleynondomiatedsorting(population):
         while pn < len(nondominated):
             aux=None
             if dominance(nondominated[pn].fitness,population[p].fitness) == 1:
-                aux = nondominated[pn].copy()
+                aux = deepcopy(nondominated[pn])
                 nondominated.pop(pn)
                 nondominated.insert(0,aux)
                 popaux = False
@@ -125,9 +126,9 @@ def updatecontributions(A,refpoint):
 
 def RandomSelect(A,TB):
     if TB == "TOP":
-        return rand.sample(A[0:len(A)/2],1)
+        return rand.sample(A[0:int(len(A)/2)],1)
     if TB == "BOT":
-        return rand.sample(A[len(A)/2:],1)
+        return rand.sample(A[int(len(A)/2):],1)
 
 def PSO(Points,Swarm,MaxIters,w,c1,c2,ncentroids):
  
@@ -138,15 +139,18 @@ def PSO(Points,Swarm,MaxIters,w,c1,c2,ncentroids):
 
     Bounds = [xmin,xmax,ymin,ymax]
 
-    refpoint = [xmax,ymax]
+    refpoint = [1000000,100]
 
     print(Bounds)
     
     print("\n\n\n\n\n\n")
 
-    for t in trange(MaxIters): 
+    A = Swarm.copy()
+
+    for _ in trange(MaxIters): 
 
         for particle in Swarm:
+            
             particle.clusters = calcclusters(particle.pos,Points)
             particle.areas, particle.radius = calcareas(particle.pos,particle.clusters,Points)
             particle.times = calctimes(particle.clusters,Points) 
@@ -154,16 +158,16 @@ def PSO(Points,Swarm,MaxIters,w,c1,c2,ncentroids):
             particle.fitness[0] = Fitness(particle.times)
             particle.fitness[1] = Fitness(particle.areas) 
         
-
-        A = bentleynondomiatedsorting(Swarm)
+        A = bentleynondomiatedsorting(A)
         A = updatecontributions(A,refpoint)
         A.sort(key=lambda objectt: objectt.contribution)
 
         LastA = A.copy()
 
-        for particle in Swarm:
-            globalbest = RandomSelect(A,'TOP')
-            particle.bestpos = RandomSelect(A,'BOT')
+        for _ in range(len(Swarm)):
+
+            globalbest = RandomSelect(A,'TOP')[0]
+            particle = RandomSelect(A,'BOT')[0]
 
             for i in range(ncentroids):
 
@@ -178,12 +182,17 @@ def PSO(Points,Swarm,MaxIters,w,c1,c2,ncentroids):
                 if particle.pos[i][1] < Bounds[2] or particle.pos[i][1] > Bounds[3]:
                     particle.pos[i][1] = np.random.uniform(Bounds[2],Bounds[3])
 
-        for particle in Swarm:
-            A = LastA + A
+        A = LastA + A
+
+    A = bentleynondomiatedsorting(Swarm)
+    A = updatecontributions(A,refpoint)
+    A.sort(key=lambda objectt: objectt.contribution)
+
+    pareto = [ob.fitness for ob in A]
                 
     bestsolever = min(Swarm, key=lambda objectt: objectt.bestfitness)
    
-    return bestsolever.bestpos,bestsolever.bestfitness,bestsolever.radius
+    return bestsolever.bestpos,bestsolever.bestfitness,bestsolever.radius, pareto
         
 def PSOClustering(Points, ncentroids = 13, nparticles = 25, niterations = 50):
 
@@ -197,17 +206,20 @@ def PSOClustering(Points, ncentroids = 13, nparticles = 25, niterations = 50):
 
     Swarm = [particle(centroids,ncentroids) for i in range(nparticles)]
 
-    solution, fitness, radius = PSO(Points,Swarm,niterations,w,c1,c2,ncentroids)
+    solution, fitness, radius, pareto = PSO(Points,Swarm,niterations,w,c1,c2,ncentroids)
 
-    return solution, fitness, radius
+    return solution, fitness, radius, pareto
 
 #Main
 
-data = loaddata(plot=True)
-centroids, fitness, radius = PSOClustering(data,niterations = 1)
-#np.save(str(fitness),centroids)
+data = loaddata(plot=False)
+
+centroids, fitness, radius, pareto = PSOClustering(data,niterations = 5)
+plt.scatter([p[0] for p in pareto],[p[1] for p in pareto])
+
+"""
 plt.scatter([c[0] for c in centroids],[c[1] for c in centroids],s=5,c='red')
 for i in range(len(centroids)):
     plt.Circle((centroids[i][0],centroids[i][1]),radius[i])
-#plt.savefig(str(fitness)+".png")
+"""
 plt.show()
