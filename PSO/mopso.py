@@ -116,6 +116,11 @@ def bentleynondomiatedsorting(population):
             nondominated.append(population[p])
     return nondominated[1:]
 
+def fastnondomiatedsorting(Swarm):
+    points = [s.fitness for s in Swarm]
+    ndf, dl, dc, ndr = pg.fast_non_dominated_sorting(points)
+    return [Swarm[i] for i in ndf[0]]
+
 def updatecontributions(A,refpoint):
     points = [ob.fitness for ob in A]
     hv = hypervolume(points)
@@ -139,28 +144,28 @@ def PSO(Points,Swarm,MaxIters,w,c1,c2,ncentroids):
 
     Bounds = [xmin,xmax,ymin,ymax]
 
-    refpoint = [1000000,100]
-
     print(Bounds)
     
     print("\n\n\n\n\n\n")
+    
+    for particle in Swarm:
+            
+        particle.clusters = calcclusters(particle.pos,Points)
+        particle.areas, particle.radius = calcareas(particle.pos,particle.clusters,Points)
+        particle.times = calctimes(particle.clusters,Points) 
 
-    A = Swarm.copy()
+        particle.fitness[0] = Fitness(particle.times)
+        particle.fitness[1] = Fitness(particle.areas) 
+
+    A=Swarm.copy()
 
     for _ in trange(MaxIters): 
-
-        for particle in Swarm:
-            
-            particle.clusters = calcclusters(particle.pos,Points)
-            particle.areas, particle.radius = calcareas(particle.pos,particle.clusters,Points)
-            particle.times = calctimes(particle.clusters,Points) 
-
-            particle.fitness[0] = Fitness(particle.times)
-            particle.fitness[1] = Fitness(particle.areas) 
         
-        A = bentleynondomiatedsorting(A)
+        #A = bentleynondomiatedsorting(A)
+        A = fastnondomiatedsorting(A)
+        refpoint = [ max(A, key=lambda objectt: objectt.fitness[0]).fitness[0] + 1, max(A, key=lambda objectt: objectt.fitness[1]).fitness[1] +1]
         A = updatecontributions(A,refpoint)
-        A.sort(key=lambda objectt: objectt.contribution)
+        A.sort(key=lambda objectt: objectt.contribution,reverse = True)
 
         LastA = A.copy()
 
@@ -181,12 +186,23 @@ def PSO(Points,Swarm,MaxIters,w,c1,c2,ncentroids):
                     particle.pos[i][0] = np.random.uniform(Bounds[0],Bounds[1])
                 if particle.pos[i][1] < Bounds[2] or particle.pos[i][1] > Bounds[3]:
                     particle.pos[i][1] = np.random.uniform(Bounds[2],Bounds[3])
+            
+        for particle in Swarm:
+            
+            particle.clusters = calcclusters(particle.pos,Points)
+            particle.areas, particle.radius = calcareas(particle.pos,particle.clusters,Points)
+            particle.times = calctimes(particle.clusters,Points) 
 
-        A = LastA + A
+            particle.fitness[0] = Fitness(particle.times)
+            particle.fitness[1] = Fitness(particle.areas) 
 
-    A = bentleynondomiatedsorting(Swarm)
+        A = LastA + Swarm
+
+    #A = bentleynondomiatedsorting(Swarm)
+    A = fastnondomiatedsorting(A)
+    refpoint = [ max(A, key=lambda objectt: objectt.fitness[0]).fitness[0] + 1, max(A, key=lambda objectt: objectt.fitness[1]).fitness[1] +1]
     A = updatecontributions(A,refpoint)
-    A.sort(key=lambda objectt: objectt.contribution)
+    A.sort(key=lambda objectt: objectt.contribution, reverse = True)
 
     pareto = [ob.fitness for ob in A]
                 
@@ -214,7 +230,7 @@ def PSOClustering(Points, ncentroids = 13, nparticles = 25, niterations = 50):
 
 data = loaddata(plot=False)
 
-centroids, fitness, radius, pareto = PSOClustering(data,niterations = 5)
+centroids, fitness, radius, pareto = PSOClustering(data,niterations = 100)
 plt.scatter([p[0] for p in pareto],[p[1] for p in pareto])
 
 """
