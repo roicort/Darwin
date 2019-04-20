@@ -77,11 +77,11 @@ def updatecontributions(A,refpoint):
         A[o].contribution = cont[o]
     return A
 
-def RandomSelect(A,TB,alpha=0.5):
+def RandomSelect(A,TB,alpha=0.20):
     if TB == "TOP":
-        return rand.sample(A[:int(len(A)/2)],1)[0]
+        return rand.sample(A[:int(len(A)*alpha)],1)[0]
     if TB == "BOT":
-        return rand.sample(A[int(len(A)/2):],1)[0]
+        return rand.sample(A[int(len(A)*(1-alpha)):],1)[0]
 
 def PSO(Swarm,MaxIters,w,c1,c2,Bounds,dim):
     
@@ -139,9 +139,9 @@ def PSO(Swarm,MaxIters,w,c1,c2,Bounds,dim):
         
 def PSOClustering(nparticles = 1000, niterations = 200):
 
-    w  = 0.01
-    c1 = 0.001
-    c2 = 0.001
+    w  = 0.001
+    c1 = 0.0001
+    c2 = 0.0001
 
     Bounds = [0, 1]
 
