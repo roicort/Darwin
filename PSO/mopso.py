@@ -17,7 +17,7 @@ class particle:
         self.fitness = [0 for n in range(dim)]
         self.bestfitness = float("inf")
         self.bestpos = self.pos 
-        self.vel = np.array([0,0])
+        self.vel = np.array([0 for _ in range(dim)])
         self.contribution = 0
 
 def Fitness(x):
@@ -132,12 +132,15 @@ def PSO(Swarm,MaxIters,w,c1,c2,Bounds,dim):
     A.sort(key=lambda objectt: objectt.contribution, reverse = True)
 
     pareto = [ob.fitness for ob in A]
-                
+
+    hv = hypervolume(pareto)
+    hv = hv.compute(refpoint)
+             
     bestsolever = min(Swarm, key=lambda objectt: objectt.bestfitness)
-   
-    return bestsolever.bestpos,bestsolever.bestfitness, pareto
+
+    return bestsolever.bestpos,bestsolever.bestfitness, pareto, hv 
         
-def PSOClustering(nparticles = 1000, niterations = 200):
+def PSOClustering(nparticles = 1000, niterations = 10):
 
     w  = 0.001
     c1 = 0.0001
@@ -151,13 +154,13 @@ def PSOClustering(nparticles = 1000, niterations = 200):
 
     Swarm = [particle(dim,Bounds) for i in range(nparticles)]
 
-    solution, fitness, pareto = PSO(Swarm,niterations,w,c1,c2,Bounds,dim)
-
-    return solution, fitness, pareto
+    solution, fitness, pareto, hv = PSO(Swarm,niterations,w,c1,c2,Bounds,dim)
+    return solution, fitness, pareto, hv
 
 #Main
 
-bestpos, fitness, pareto = PSOClustering()
+bestpos, fitness, pareto, hv = PSOClustering()
+print("Hypervolume = "+str(hv))
 colors = np.random.rand(len(pareto))
 x = np.linspace(0,1,1000)
 y = 1 - sc.sqrt(x)
