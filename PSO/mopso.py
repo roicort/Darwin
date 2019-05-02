@@ -12,16 +12,14 @@ from pygmo import hypervolume
 from deap import benchmarks
 
 class particle:
-    def __init__(self,dim,Bounds):
+    def __init__(self,dim,n_funct,Bounds):
         self.pos = np.random.uniform(Bounds[0],Bounds[1],dim) 
-        self.fitness = [0 for n in range(dim)]
-        self.bestfitness = float("inf")
-        self.bestpos = self.pos 
+        self.fitness = [0 for n in range(n_funct)]
         self.vel = np.array([0 for _ in range(dim)])
         self.contribution = 0
 
 def Fitness(x):
-    return benchmarks.zdt1(x)
+    return benchmarks.zdt2(x)
 
 def dominance(A,B):
 
@@ -77,13 +75,31 @@ def updatecontributions(A,refpoint):
         A[o].contribution = cont[o]
     return A
 
-def RandomSelect(A,TB,alpha=0.20):
+def RandomSelect(A,TB,alpha=0.80):
+
     if TB == "TOP":
         return rand.sample(A[:int(len(A)*alpha)],1)[0]
     if TB == "BOT":
         return rand.sample(A[int(len(A)*(1-alpha)):],1)[0]
 
-def PSO(Swarm,MaxIters,w,c1,c2,Bounds,dim):
+def getindex(particle,A):
+    index = -1
+    for i in range(len(A)):
+        if A[i] == particle:
+            index = i
+    return index
+
+def selectneighbor(A,particle):
+    index = getindex(particle,A)
+    if index == 0:
+        return A[index+1]
+    if index == len(A):
+        return A[index-1]
+    else:
+        return A[index+np.random.randint(-1, 1)]
+
+
+def PSO(Swarm,MaxIters,w,c1,c2,Bounds,dim,n_funct):
     
     print("\n\n\n\n\n\n")
     
@@ -96,74 +112,90 @@ def PSO(Swarm,MaxIters,w,c1,c2,Bounds,dim):
         
         #A = bentleynondomiatedsorting(A)
         A = fastnondomiatedsorting(A)
-        refpoint = [ (max(A, key=lambda objectt: objectt.fitness[i]).fitness[i] + 0.1 ) for i in range(dim)]
+        refpoint = [ (max(A, key=lambda objectt: objectt.fitness[i]).fitness[i] + 0.1 ) for i in range(n_funct)]
         A = updatecontributions(A,refpoint)
         A.sort(key=lambda objectt: objectt.contribution,reverse = True)
-
+        if len(A) > len(Swarm):
+            A = A[:len(Swarm)]
+        
         LastA = A.copy()
 
-        for _ in range(len(Swarm)):
+        for particle in Swarm:
 
             globalbest = RandomSelect(A,'TOP')
-            particle = RandomSelect(A,'BOT')
+            localparticle = RandomSelect(A,'BOT')
 
-            for i in range(0):
+            r1 = np.random.uniform(0.0000001,1)
+            r2 = np.random.uniform(0.0000001,1)
 
-                r1 = np.random.uniform(0.0000001,1)
-                r2 = np.random.uniform(0.0000001,1)
+            particle.vel = w * particle.vel + (c1 * r1 * (localparticle.pos - particle.pos)) + (c2 * r2 * (globalbest.pos - particle.pos))
+            #particle.vel = w * particle.vel + (c2 * r2 * (globalbest.pos - particle.pos))
+            particle.pos = particle.pos + particle.vel
 
-                particle.vel[i] = w * particle.vel[i] + (c1 * r1 * (particle.bestpos[i] - particle.pos[i])) + (c2 * r2 * (globalbest.bestpos[i] - particle.pos[i]))
-                particle.pos[i] = particle.pos[i] + particle.vel[i]
-
-                if particle.pos[i][0] < Bounds[0] or particle.pos[i][0] > Bounds[1]:
-                    particle.pos[i][0] = np.random.uniform(Bounds[0],Bounds[1])
-                if particle.pos[i][1] < Bounds[2] or particle.pos[i][1] > Bounds[3]:
-                    particle.pos[i][1] = np.random.uniform(Bounds[2],Bounds[3])
+            for i in range(len(particle.pos)):
+                if particle.pos[i] < Bounds[0]:
+                    particle.pos[i] = Bounds[0]
+                if particle.pos[i] > Bounds[1]:
+                    particle.pos[i] = Bounds[1]
             
-        for particle in Swarm:
             particle.fitness = Fitness(particle.pos)
 
         A = LastA + Swarm
 
     #A = bentleynondomiatedsorting(Swarm)
     A = fastnondomiatedsorting(A)
-    refpoint = [ (max(A, key=lambda objectt: objectt.fitness[i]).fitness[i] + 0.1 ) for i in range(dim)]
+    #refpoint = [ (max(A, key=lambda objectt: objectt.fitness[i]).fitness[i] + 0.1 ) for i in range(n_funct)]
+    refpoint = [1.1,1.1]
     A = updatecontributions(A,refpoint)
     A.sort(key=lambda objectt: objectt.contribution, reverse = True)
+    if len(A) > len(Swarm):
+         A = A[:100]
 
     pareto = [ob.fitness for ob in A]
 
     hv = hypervolume(pareto)
     hv = hv.compute(refpoint)
              
-    bestsolever = min(Swarm, key=lambda objectt: objectt.bestfitness)
+    bestsolever = min(Swarm, key=lambda objectt: objectt.fitness)
 
-    return bestsolever.bestpos,bestsolever.bestfitness, pareto, hv 
+    return bestsolever.pos,bestsolever.fitness, pareto, hv 
         
-def PSOClustering(nparticles = 1000, niterations = 10):
+def MOPSO(nparticles = 300, niterations = 1200):
 
-    w  = 0.001
-    c1 = 0.0001
-    c2 = 0.0001
+    w  = 0.4
+    c1 = 1
+    c2 = 1
 
     Bounds = [0, 1]
 
     print(Bounds)
 
-    dim = 2
+    dim = 30
+    n_funct = 2
 
-    Swarm = [particle(dim,Bounds) for i in range(nparticles)]
+    Swarm = [particle(dim,n_funct,Bounds) for i in range(nparticles)]
 
-    solution, fitness, pareto, hv = PSO(Swarm,niterations,w,c1,c2,Bounds,dim)
+    solution, fitness, pareto, hv = PSO(Swarm,niterations,w,c1,c2,Bounds,dim,n_funct)
     return solution, fitness, pareto, hv
 
 #Main
 
-bestpos, fitness, pareto, hv = PSOClustering()
-print("Hypervolume = "+str(hv))
-colors = np.random.rand(len(pareto))
-x = np.linspace(0,1,1000)
-y = 1 - sc.sqrt(x)
-plt.plot(x,y,alpha=0.2)
-plt.scatter([p[0] for p in pareto],[p[1] for p in pareto], s=5, c=colors, alpha=0.5) 
-plt.show()
+hvs = []
+
+for _ in range(1):
+
+    bestpos, fitness, pareto, hv = MOPSO()
+    hvs.append(hv)
+    
+    print("")
+    print("Hypervolume = "+str(hv))
+    colors = np.random.rand(len(pareto))
+    #x = np.linspace(0,1,1000)
+    #y = 1 - sc.sqrt(x)
+    #plt.plot(x,y,alpha=0.2)
+    plt.scatter([p[0] for p in pareto],[p[1] for p in pareto], s=5, c=colors, alpha=0.5) 
+    plt.show()
+    
+
+print("Mean " +str(np.mean(hvs)))
+print("Std " +str(np.std(hvs)))

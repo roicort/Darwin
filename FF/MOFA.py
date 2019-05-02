@@ -40,7 +40,6 @@ def move(FireflyI,FireflyJ,Beta,Gamma,Alpha,n,Bounds):
     for i in range(len(X)):
         if X[i] < Bounds[0] or X[i] > Bounds[1]:
             X = np.random.uniform(Bounds[0], Bounds[1], n)
-            break
     return X
 
 def dominance(FireflyJ,FireflyI):
