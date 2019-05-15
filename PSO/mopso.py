@@ -144,8 +144,8 @@ def PSO(Swarm,MaxIters,w,c1,c2,Bounds,dim,n_funct):
 
     #A = bentleynondomiatedsorting(Swarm)
     A = fastnondomiatedsorting(A)
-    #refpoint = [ (max(A, key=lambda objectt: objectt.fitness[i]).fitness[i] + 0.1 ) for i in range(n_funct)]
-    refpoint = [1.1,1.1]
+    refpoint = [ (max(A, key=lambda objectt: objectt.fitness[i]).fitness[i] + 0.1 ) for i in range(n_funct)]
+    #refpoint = [1.5,1.5]
     A = updatecontributions(A,refpoint)
     A.sort(key=lambda objectt: objectt.contribution, reverse = True)
     if len(A) > len(Swarm):
@@ -168,8 +168,6 @@ def MOPSO(nparticles = 300, niterations = 1200):
 
     Bounds = [0, 1]
 
-    print(Bounds)
-
     dim = 30
     n_funct = 2
 
@@ -182,17 +180,19 @@ def MOPSO(nparticles = 300, niterations = 1200):
 
 hvs = []
 
-for _ in range(1):
-
+for iteration in range(1):
+    
+    print(iteration)
     bestpos, fitness, pareto, hv = MOPSO()
     hvs.append(hv)
     
-    print("")
+    #print("")
     print("Hypervolume = "+str(hv))
     colors = np.random.rand(len(pareto))
-    #x = np.linspace(0,1,1000)
-    #y = 1 - sc.sqrt(x)
-    #plt.plot(x,y,alpha=0.2)
+    x = np.linspace(0,1,1000)
+    y1 = 1 - sc.sqrt(x)
+    y2 = 1 - x**2
+    plt.plot(x,y2,alpha=0.2)
     plt.scatter([p[0] for p in pareto],[p[1] for p in pareto], s=5, c=colors, alpha=0.5) 
     plt.show()
     
