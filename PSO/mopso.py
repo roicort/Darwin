@@ -19,7 +19,7 @@ class particle:
         self.contribution = 0
 
 def Fitness(x):
-    return benchmarks.zdt2(x)
+    return benchmarks.zdt1(x)
 
 def dominance(A,B):
 
@@ -180,12 +180,12 @@ def MOPSO(nparticles = 300, niterations = 1200):
 
 hvs = []
 
-for iteration in range(1):
+for iteration in range(30):
     
     print(iteration)
     bestpos, fitness, pareto, hv = MOPSO()
     hvs.append(hv)
-    
+    """
     #print("")
     print("Hypervolume = "+str(hv))
     colors = np.random.rand(len(pareto))
@@ -195,7 +195,7 @@ for iteration in range(1):
     plt.plot(x,y2,alpha=0.2)
     plt.scatter([p[0] for p in pareto],[p[1] for p in pareto], s=5, c=colors, alpha=0.5) 
     plt.show()
-    
+    """
 
 print("Mean " +str(np.mean(hvs)))
 print("Std " +str(np.std(hvs)))
