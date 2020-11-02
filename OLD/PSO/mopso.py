@@ -19,7 +19,7 @@ class particle:
         self.contribution = 0
 
 def Fitness(x):
-    return benchmarks.zdt2(x)
+    return benchmarks.fonseca(x)
 
 def dominance(A,B):
 
@@ -160,7 +160,7 @@ def PSO(Swarm,MaxIters,w,c1,c2,Bounds,dim,n_funct):
 
     return bestsolever.pos,bestsolever.fitness, pareto, hv 
         
-def MOPSO(nparticles = 300, niterations = 1200):
+def MOPSO(nparticles = 300, niterations = 200):
 
     w  = 0.4
     c1 = 1
@@ -185,9 +185,6 @@ hvs.append(hv)
 print("Hypervolume = "+str(hv))
 colors = np.random.rand(len(pareto))
 x = np.linspace(0,1,1000)
-y1 = 1 - np.sqrt(x)
-y2 = 1 - x**2
-plt.plot(x,y2,alpha=0.2)
 plt.scatter([p[0] for p in pareto],[p[1] for p in pareto], s=5, c=colors, alpha=0.5) 
 plt.show()
 
